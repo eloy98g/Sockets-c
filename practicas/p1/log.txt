@@ -1,0 +1,27 @@
+dont forget using ulimit -s 32000
+
+[Secuencial]
+O0 -> 3833.641 ms
+O1 -> 677.577 ms
+O2 -> 0.004 ms
+
+[Secuencial i,k,j]
+O0 -> 2875.645 ms
+O1 -> 674.389 ms
+O2 -> 0.004 ms
+
+[Secuencial B(1024,1040)] 
+O0 -> 3454.352 ms
+O1 -> 677.012 ms
+O2 -> 0.005 ms
+
+[Secuencial k,j,i]
+O0 -> 15153.42 ms
+O1 -> 654.954 ms
+O2 -> 0.001 ms
+
+padding P1
+pthread P2
+
+
+
