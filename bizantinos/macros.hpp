@@ -1,12 +1,3 @@
-/*!
-  \file   macros.hpp
-  \brief  Macros para la pantalla
-  \author Tomás Espejo Gómez
-  \date   2018-03-05
-  \note  http://isthe.com/chongo/tech/comp/ansi_escapes.html
-*/
-
-
 #ifndef _MACROS_HPP_
 #define _MACROS_HPP_ //!< Macros for the screen
 

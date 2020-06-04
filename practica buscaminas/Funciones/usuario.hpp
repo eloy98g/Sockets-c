@@ -6,9 +6,11 @@
 #include <iostream>
 #include <cassert>
 
-#define ESPERANDO_PARTIDA -1
+#define USUARIO_VACIO -5
+#define USUARIO_DESCONOCIDO -1
 #define USUARIO_SIN_IDENTIFICAR -2
-#define USUARIO_VACIO -3
+#define USUARIO_IDENTIFICADO -3
+#define ESPERANDO_PARTIDA -4
 
 using namespace std;
 
@@ -30,10 +32,13 @@ class Usuario{
 		void setEstado(int nuevo);
 		void setSocket(int nuevo);
 
-		inline bool estaEnPartida()const{return estado_ >= 0;};
-		inline bool estaEsperandoPartida()const{return estado_ == ESPERANDO_PARTIDA;};
-		inline bool estaSinIdentificar()const{return estado_ == USUARIO_SIN_IDENTIFICAR;};
 		inline bool estaVacio()const{return estado_ == USUARIO_VACIO;};
+		inline bool estaEnPartida()const{return estado_ >= 0;};
+		inline bool estaDesconocido()const{return estado_ == USUARIO_DESCONOCIDO;};
+		inline bool estaSinIdentificar()const{return estado_ == USUARIO_SIN_IDENTIFICAR;};
+		inline bool estaIdentificado()const{return estado_ == USUARIO_IDENTIFICADO;};
+		inline bool estaEsperandoPartida()const{return estado_ == ESPERANDO_PARTIDA;};
+
 		inline int getPartida() const{
 			assert(estaEnPartida());
 			return estado_;

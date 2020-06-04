@@ -8,6 +8,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <string>
+#include <iostream>
+
+#include "macros.hpp"
+
+void imprimeTablero(std::string str);
 
 int main (int argc,char const *argv[]){
 
@@ -32,11 +38,11 @@ int main (int argc,char const *argv[]){
 	/* --------------------------------------------------
 		Se abre el socket
 	---------------------------------------------------*/
-  	sd = socket (AF_INET, SOCK_STREAM, 0);
+	sd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sd == -1)
 	{
 		perror("No se puede abrir el socket cliente\n");
-    		exit (1);
+		exit (1);
 	}
 
 
@@ -82,13 +88,25 @@ int main (int argc,char const *argv[]){
             bzero(buffer,sizeof(buffer));
             recv(sd,buffer,sizeof(buffer),0);
 
-            printf("\n%s\n",buffer);
+			std::string strbuffer(buffer);
+            if(strbuffer.find("+Ok. Partida:") == 0){
+				std::cout << buffer << std::endl;
+				size_t pointer = strbuffer.find("+Ok. Partida:");
+				pointer = pointer + 13;
+				imprimeTablero(strbuffer.substr(pointer));
+			}
+			else{
+				if(strbuffer.find("+Ok") == 0){
+					std::cout << BGREEN << "+Ok." << RESET << strbuffer.substr(strbuffer.find("+Ok.") + 4);
+				}
+				else{
+					std::cout << BRED << "+Err." << RESET << strbuffer.substr(strbuffer.find("+Err.") + 6);
+				}
+			}
 
-            if(strcmp(buffer,"Demasiados clientes conectados\n") == 0)
+            if(strcmp(buffer,"-Err. Servidor desconectado\n") == 0)
                 fin =1;
-            //Server envia OK o error, si no envia ninguna de esos dos es el tablero
-            	//Lo mandamos a la funcion de imprimir tablero (crear funcion placeholder)
-            if(strcmp(buffer,"Desconexion servidor\n") == 0)
+            if(strcmp(buffer,"-Err. Demasiados usuarios conectados\n") == 0)
                 fin =1;
 
         }
@@ -121,4 +139,56 @@ int main (int argc,char const *argv[]){
 
     return 0;
 
+}
+
+void imprimeTablero(std::string str){
+	char tablero[300];
+	strcpy(tablero, str.c_str());
+
+	int indice = 0;
+
+	std::cout << "┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐" <<std::endl;
+	std::cout << "│   │ A │ B │ C │ D │ E │ F │ G │ H │ I │ J │" <<std::endl;
+
+	for(int i = 0; i < 10; i++){
+		std::cout << "├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤" <<std::endl;
+
+		std::cout << "│ "<<i<<" │";
+
+		for(int j = 0; j < 10; j++){
+			if(tablero[indice] == '-'){
+				std::cout << "   │";
+			}
+			else if(tablero[indice] == 'a' || tablero[indice] == 'b'){
+				if((tablero[indice] == 'a' && tablero[indice + 1] == ',') || (tablero[indice] == 'a' && tablero[indice + 1] == ';'))
+					std::cout << BIRED << " þ " << RESET << "│";
+				if((tablero[indice] == 'b' && tablero[indice + 1] == ',') || (tablero[indice] == 'b' && tablero[indice + 1] == ';'))
+					std::cout << BIBLUE << " þ " << RESET << "│";
+				if(tablero[indice] == 'a' && tablero[indice + 1] == 'b'){
+					std::cout << BIBLUE << "þ " << BIRED << "þ" << RESET << "│";
+					indice++;
+				}
+			}
+			else{
+				if(tablero[indice] == '*') std::cout << " * │";
+				else{
+					if(tablero[indice] == '0') std::cout << " 0 │";
+					if(tablero[indice] == '1') std::cout << BBLUE << " 1" << RESET << " │";
+					if(tablero[indice] == '2') std::cout << BGREEN << " 2" << RESET << " │";
+					if(tablero[indice] == '3') std::cout << BRED << " 3" << RESET << " │";
+					if(tablero[indice] == '4') std::cout << BPURPLE << " 4" << RESET << " │";
+					if(tablero[indice] == '5') std::cout << BWHITE << " 5" << RESET << " │";
+					if(tablero[indice] == '6') std::cout << BCYAN << " 6" << RESET << " │";
+					if(tablero[indice] == '7') std::cout << BYELLOW << " 7" << RESET << " │";
+					if(tablero[indice] == '8') std::cout << BBLACK << " 8" << RESET << " │";
+				}
+			}
+
+			indice = indice + 2;
+		}
+
+		std::cout << std::endl;
+	}
+
+	std::cout << "└───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘" <<std::endl;
 }

@@ -6,9 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 #include <arpa/inet.h>
-
 
 int main ( )
 {
@@ -18,13 +16,9 @@ int main ( )
 	-----------------------------------------------------*/
 	int sd;
 	struct sockaddr_in sockname;
-	char buffer[250];
+	char buffer[100];
 	socklen_t len_sockname;
-    fd_set readfds, auxfds;
-    int salida;
-    int fin = 0;
 	
-    
 	/* --------------------------------------------------
 		Se abre el socket 
 	---------------------------------------------------*/
@@ -35,15 +29,15 @@ int main ( )
     		exit (1);	
 	}
 
-   
-    
+	
+
 	/* ------------------------------------------------------------------
 		Se rellenan los campos de la estructura con la IP del 
 		servidor y el puerto del servicio que solicitamos
 	-------------------------------------------------------------------*/
 	sockname.sin_family = AF_INET;
 	sockname.sin_port = htons(2000);
-	sockname.sin_addr.s_addr =  inet_addr("192.168.1.44");
+	sockname.sin_addr.s_addr =  inet_addr("127.0.0.1");
 
 	/* ------------------------------------------------------------------
 		Se solicita la conexión con el servidor
@@ -55,72 +49,22 @@ int main ( )
 		perror ("Error de conexión");
 		exit(1);
 	}
-    
-    //Inicializamos las estructuras
-    FD_ZERO(&auxfds);
-    FD_ZERO(&readfds);
-    
-    FD_SET(0,&readfds);
-    FD_SET(sd,&readfds);
 
-    
 	/* ------------------------------------------------------------------
 		Se transmite la información
 	-------------------------------------------------------------------*/
 	do
 	{
-        auxfds = readfds;
-        salida = select(sd+1,&auxfds,NULL,NULL,NULL);
-        
-        //Tengo mensaje desde el servidor
-        if(FD_ISSET(sd, &auxfds)){
-            
-            bzero(buffer,sizeof(buffer));
-            recv(sd,buffer,sizeof(buffer),0);
-            
-            printf("\n%s\n",buffer);
-            
-            if(strcmp(buffer,"Demasiados clientes conectados\n") == 0)
-                fin =1;
-            
-            if(strcmp(buffer,"Desconexion servidor\n") == 0)
-                fin =1;
-            
-        }
-        else
-        {
-            
-            //He introducido información por teclado
-            if(FD_ISSET(0,&auxfds)){
-                bzero(buffer,sizeof(buffer));
-                
-                fgets(buffer,sizeof(buffer),stdin);
-                
-                if(strcmp(buffer,"SALIR\n") == 0){
-                        fin = 1;
-                
-                }
-                
-                send(sd,buffer,sizeof(buffer),0);
-                
-            }
-            
-            
-        }
-        
-        
+		puts("Teclee el mensaje a transmitir");
+		gets(buffer);
+			
+		if(send(sd,buffer,100,0) == -1)
+			perror("Error enviando datos");
 				
-    }while(fin == 0);
+	}while(strcmp(buffer, "FIN") != 0);
 		
-    close(sd);
-
-    return 0;
-		
+	close(sd);
+	return 0;
 }
-
-
-
-
-
-
+		
 
