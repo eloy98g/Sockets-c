@@ -18,6 +18,8 @@ class Partida{
 		std::vector <int> banderasJugadores_;
 		bool partidaTerminada_;
 		int ganador_;
+		int id_j1_, id_j2_;
+		int turno_;
 
 		void inline setEstadoCasilla(int i, int j, int estado){estadosCasillas_[i][j] = estado;}
 
@@ -41,8 +43,6 @@ class Partida{
 		}
 
 		void gana(int jugador);
-
-		int getGanador() const;
 
 		void pierde(int jugador);
 
@@ -79,6 +79,9 @@ class Partida{
 			return estadosCasillas_[i][j];
 		}
 
+		int inline getTurno() const{return turno_;};
+		void inline setTurno(int turno){turno_ = turno;};
+
 		void explorar(int i, int j);
 
 		bool checkBanderas(int jugador) const;
@@ -90,10 +93,21 @@ class Partida{
 		void restart();
 		void mostrarPartida() const;
 
-		void descubrirCasilla(int i, int j, int jugador);
-		void setBandera(int i, int j, int jugador);
+		void descubrirCasilla(int i, int j);
+		void setBandera(int i, int j);
+
+		void inline setJ1(int id){id_j1_ = id;};
+		void inline setJ2(int id){id_j2_ = id;};
+
+		int inline getJ1() const{return id_j1_;};
+		int inline getJ2() const{return id_j2_;};
+
+		int inline getOponente(int id) const{
+			if(id == getJ1()) return getJ2();
+			else return getJ1();};
 
 		bool inline partidaTerminada() const{return partidaTerminada_;}
+		void inline terminarPartida() {partidaTerminada_ = true;}
 
 		std::string getTablero() const;
 
@@ -101,12 +115,22 @@ class Partida{
 			return esDesconocida(i,j);
 		}
 
-		bool inline puedePonerBandera(int i, int j, int jugador) const{
+		bool inline puedePonerBandera(int i, int j) const{
+			if(!esDesconocida(i,j)) return false;
 			if(tieneBandera(i,j) == false) return true;
 			if(getBandera(i,j) == 2) return false;
-			if(getBandera(i,j) != jugador) return true;
+			if(getBandera(i,j) != getTurno()) return true;
 			return false;
 		}
+
+		int inline getIDJugadorActual() const{
+			if(getTurno() == 0) return getJ1();
+			if(getTurno() == 1) return getJ2();
+		}
+
+		int getGanador() const;
+
+		void inline mostrarPartidaCompleta() const{tablero_.mostrarTablero();};
 };
 
 #endif

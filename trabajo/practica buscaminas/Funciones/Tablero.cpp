@@ -27,6 +27,12 @@ void Tablero::iniciarTablero(){
 
 	int coord_i, coord_j;
 
+	for(int i = 0; i < 10; i++){
+		for(int j = 0; j < 10; j++){
+			setCasilla(i, j, 0);
+		}
+	}
+
 	for(int i = 0; i < 20; i++){
 		do{
 			coord_i = rand()%10;
@@ -44,19 +50,21 @@ void Tablero::iniciarTablero(){
 }
 
 void Tablero::mostrarTablero() const{
-	std::cout << "┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐" <<std::endl;
+	std::cout << "┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐" <<std::endl;
+	std::cout << "│   │ A │ B │ C │ D │ E │ F │ G │ H │ I │ J │" <<std::endl;
+
 
 	for(int i = 0; i < 10; i++){
-		if(i != 0) std::cout << "├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤" <<std::endl;
+		std::cout << "├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤" <<std::endl;
 
-		std::cout << "│";
+		std::cout << "│ "<<i<<" │";
 
 		for(int j = 0; j < 10; j++){
 			if(hasBomba(i,j)) std::cout << " * │";
 			else{
 				switch(getCasilla(i,j)){
 					case 0:
-						std::cout << "   │";
+						std::cout << " 0 │";
 					break;
 					case 1:
 						std::cout << BBLUE << " 1" << RESET << " │";
@@ -89,5 +97,5 @@ void Tablero::mostrarTablero() const{
 		std::cout << std::endl;
 	}
 
-	std::cout << "└───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘" <<std::endl;
+	std::cout << "└───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘" <<std::endl;
 }

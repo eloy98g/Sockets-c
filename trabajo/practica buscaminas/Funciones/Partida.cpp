@@ -40,7 +40,9 @@ int Partida::getGanador() const{
 		assert(partidaTerminada());
 	#endif
 
-	return ganador_;
+	if(ganador_ == 0) return getJ1();
+
+	return getJ2();
 }
 
 
@@ -83,7 +85,7 @@ void Partida::explorar(int i, int j){
 				explorar(i + 1, j);
 			}
 		}
-		if(checkCoords(i + 1, j - 1)){
+		if(checkCoords(i + 1, j + 1)){
 			if(esDesconocida(i + 1, j + 1)){
 				explorar(i + 1, j + 1);
 			}
@@ -111,7 +113,7 @@ Partida::Partida():estadosCasillas_(10),banderasJugadores_(2){
 		estadosCasillas_[i].resize(10);
 	}
 
-	restart();
+	partidaTerminada_ = true;
 }
 
 void Partida::restart(){
@@ -128,6 +130,7 @@ void Partida::restart(){
 	for(int i = 0; i < 2; i++) setNBanderas(i, 0);
 
 	ganador_ = -1;
+	setTurno(0);
 }
 
 void Partida::mostrarPartida() const{
@@ -196,17 +199,15 @@ void Partida::mostrarPartida() const{
 	std::cout << "└───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘" <<std::endl;
 }
 
-void Partida::descubrirCasilla(int i, int j, int jugador){
+void Partida::descubrirCasilla(int i, int j){
 	#ifndef NDEBUG
 		assert(!partidaTerminada());
 		assert(checkCoords(i, j));
 		assert(esDesconocida(i, j));
-		assert(jugador >= 0);
-		assert(jugador < 2);
 	#endif
 
 	if(tablero_.hasBomba(i,j)){
-		pierde(jugador);
+		pierde(getTurno());
 
 		for(i = 0; i < 10; i++){
 			for(j = 0; j < 10; j++){
@@ -217,30 +218,32 @@ void Partida::descubrirCasilla(int i, int j, int jugador){
 	else{
 		explorar(i,j);
 	}
+
+	setTurno(1 - getTurno());
 }
 
-void Partida::setBandera(int i, int j, int jugador){
+void Partida::setBandera(int i, int j){
 	#ifndef NDEBUG
 		assert(!partidaTerminada());
 		assert(checkCoords(i, j));
-		assert(esDesconocida(i, j) || (getBandera(i,j) != jugador && getBandera(i,j) != 2));
-		assert(jugador >= 0);
-		assert(jugador < 2);
+		assert(puedePonerBandera(i, j));
 	#endif
 
 	if(!tieneBandera(i,j)){
-		setEstadoCasilla(i, j, jugador);
-		setNBanderas(jugador, getNBanderas(jugador) + 1);
+		setEstadoCasilla(i, j, getTurno());
+		setNBanderas(getTurno(), getNBanderas(getTurno()) + 1);
 	}
 	else{
 		setEstadoCasilla(i, j, 2);
-		setNBanderas(jugador, getNBanderas(jugador) + 1);
+		setNBanderas(getTurno(), getNBanderas(getTurno()) + 1);
 	}
 
-	if(getNBanderas(jugador) == 10){
-		if(checkBanderas(jugador)) gana(jugador);
-		else pierde(jugador);
+	if(getNBanderas(getTurno()) == 10){
+		if(checkBanderas(getTurno())) gana(getTurno());
+		else pierde(getTurno());
 	}
+
+	setTurno(1 - getTurno());
 }
 
 std::string Partida::getTablero() const{

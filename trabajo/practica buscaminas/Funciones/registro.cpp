@@ -64,6 +64,7 @@ void Registro::escribeUsuarios(){
 }
 
 void Registro::leeUsuarios(){
+
 	ifstream f("jugadores.txt");
 	list<Usuario>::iterator i;
 
@@ -80,6 +81,9 @@ void Registro::leeUsuarios(){
 			usuarios_.push_back(u);
 		}
 		f.close();
+	}else{
+		ofstream archivo_salida("jugadores.txt");
+		archivo_salida.close();
 	}
 
 }
