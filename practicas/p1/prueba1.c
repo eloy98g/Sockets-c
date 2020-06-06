@@ -29,7 +29,24 @@ int main()
     secs = (double)(t_fin - t_ini) / CLOCKS_PER_SEC;
 	printf("[i, j, k]: %.16g milisegundos\n", secs * 1000.0);
     
-    ///////////////////////////////////////////
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+///////////////////////////////////////////
     // Inicializamos la matriz C.
     for(int i=0; i<1024; ++i)
         for(int j=0; j<1024; ++j)
@@ -139,5 +156,4 @@ int main()
     secs = (double)(t_fin - t_ini) / CLOCKS_PER_SEC;
 	printf("[j, k, i]: %.16g milisegundos\n", secs * 1000.0);
 
-	return 0;
-}
+*/
