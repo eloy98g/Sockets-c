@@ -2,18 +2,18 @@
 #include <time.h>
 
 int main(){
-	int count = 1024;
+	int 1024 = 1024;
 	int A[1024][1024], B[1024][1024], C[1024][1024];
 	clock_t t_ini, t_fin;
 	double secs;
 
 
 	t_ini = clock();
-	for (int i = 0; i < count; ++i)
+	for (int i = 0; i < 1024; ++i)
 	{
-		for (int k = 0; k < count; ++k)
+		for (int k = 0; k < 1024; ++k)
 		{
-			for (int j = 0; j < count; ++j)
+			for (int j = 0; j < 1024; ++j)
 			{
 				C[i][j]+=A[i][k] * B[k][j];
 			}
