@@ -20,14 +20,10 @@ int main()
     for(int i=0; i<1024; ++i)
         for(int j=0; j<1024; ++j)
             for(int k=0; k<1024; ++k)
-                C[i][j]=(C[i][j])+((A[i][k])*(B[k][j]));
+                C[i][j] += A[i][k]*B[k][j]; 
 
     //establecemos el tiempo tras la multiplicación
 	t_fin = clock();
-
-    printf("Inicio: %f \n", (double)t_ini);
-	printf("Fin: %f \n", (double)t_fin);
-	printf("clocks: %f \n", (double)CLOCKS_PER_SEC);
 
 	//realizamos la resta
     secs = (double)(t_fin - t_ini) / CLOCKS_PER_SEC;

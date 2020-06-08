@@ -1,81 +1,167 @@
-# include <stdlib.h>
-# include <stdio.h>
-# include <math.h>
-# include <time.h>
-# include <omp.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#include <sys/time.h>
 
-#define MAX 4000
-int main ( void );
-void timestamp ( void );
+#define N 4000
 
-int main ( void ){
-	double a[MAX][MAX];
-	double angle;
-	double b[MAX][MAX];
-	double c[MAX][MAX];
-	int i;
-	int j;
-	int k;
-	int n = MAX;
-	double pi = 3.141592653589793;
-	double s;
-	int thread_num;
-	double wtime;
+int A[N][N];
+int B[N][N];
+int C[N][N];
 
-	timestamp ( );
-
-	printf("-----------------\n");
-	printf("[i, j, k]\n");
-
-	thread_num = omp_get_max_threads ( );
-
-	printf ( "\n" );
-	printf ( "  The number of processors available = %d\n", omp_get_num_procs ( ) );
-	printf ( "  The number of threads available    = %d\n", thread_num );
-	printf ( "  The matrix order N                 = %d\n", n );
+int main() 
+{
+    int i,j,k;
+    struct timeval tv1, tv2;
+    struct timezone tz;
+	double secs; 
+    int hilos = 32;
 	
-	# pragma omp for
-	for ( i = 0; i < n; i++ ){
-		for ( j = 0; j < n; j++ ){
-			c[i][j] = 0.0;
-			for ( k = 0; k < n; k++ ){
-				c[i][j] +=  a[i][k] * b[k][j];
-			}
-		}
-	}
+	
+	printf("BUCLE MAS EXTERNO\n");
 
+	omp_set_num_threads(hilos);
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
 	}
-	wtime = omp_get_wtime ( ) - wtime;
-	printf ( "  Elapsed seconds = %g\n", wtime );
-	printf ( "  C(100,100)  = %g\n", c[99][99] );
+    gettimeofday(&tv1, &tz);
+    #pragma omp parallel for private(i,j,k) shared(A,B,C)
+    for (i = 0; i < N; ++i) {
+        for (j = 0; j < N; ++j) {
+            for (k = 0; k < N; ++k) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[i, j, k]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);
+
+	
+	/////////////////////////////////////////
+	omp_set_num_threads(omp_get_num_procs());
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
+	}
+    gettimeofday(&tv1, &tz);
+    #pragma omp parallel for private(i,j,k) shared(A,B,C)
+    for (j = 0; j < N; ++j) {
+        for (k = 0; k < N; ++k) {
+            for (i = 0; i < N; ++i) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[j, k, i]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);
+
+	
+	//////////////////////////////////////// 
+	omp_set_num_threads(omp_get_num_procs());
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
+	}
+    gettimeofday(&tv1, &tz);
+    #pragma omp parallel for private(i,j,k) shared(A,B,C)
+    for (i = 0; i < N; ++i) {
+        for (k = 0; k < N; ++k) {
+            for (j = 0; j < N; ++j) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[i, k, j]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);
+	
+
 	/*
-	Terminate.
-	*/
-	printf ( "\n" );
-	printf ( "MXM_OPENMP:\n" );
-	printf ( "  Normal end of execution.\n" );
+	printf("BUCLE MAS INTERNO\n");
 
-	printf ( "\n" );
-	timestamp ( );
-
-	return 0;
+	omp_set_num_threads(hilos);
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
 	}
-	/******************************************************************************/
+    gettimeofday(&tv1, &tz);
+    
+	#pragma omp parallel
+	for (i = 0; i < N; ++i) {
+        for (j = 0; j < N; ++j) {
+			#pragma omp for schedule(dynamic,1)
+            for (k = 0; k < N; ++k) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
 
-	void timestamp ( void ){
-	# define TIME_SIZE 40
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[i, j, k]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);
 
-	static char time_buffer[TIME_SIZE];
-	const struct tm *tm;
-	time_t now;
-
-	now = time ( NULL );
-	tm = localtime ( &now );
-
-	strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
-
-	printf ( "%s\n", time_buffer );
-
-	return;
-	# undef TIME_SIZE
+	
+	/////////////////////////////////////////
+	omp_set_num_threads(omp_get_num_procs());
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
 	}
+    gettimeofday(&tv1, &tz);
+
+    #pragma omp parallel
+    for (j = 0; j < N; ++j) {
+        for (k = 0; k < N; ++k) {
+			#pragma omp for schedule(dynamic,1)
+            for (i = 0; i < N; ++i) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[j, k, i]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);
+
+	
+	//////////////////////////////////////// 
+	omp_set_num_threads(omp_get_num_procs());
+    for (i= 0; i< N; i++)
+        for (j= 0; j< N; j++)
+	{
+            A[i][j] = 2;
+            B[i][j] = 2;
+	}
+    gettimeofday(&tv1, &tz);
+
+    #pragma omp parallel
+    for (i = 0; i < N; ++i) {
+        for (k = 0; k < N; ++k) {
+			#pragma omp for schedule(dynamic,1)
+            for (j = 0; j < N; ++j) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+
+    gettimeofday(&tv2, &tz);
+    secs = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+    printf("[i, k, j]: Hilos: %d, T: %.16g milisegundos\n", hilos, secs * 1000.0);*/
+}
