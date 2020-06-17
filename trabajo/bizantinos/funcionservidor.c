@@ -10,8 +10,11 @@ int parseo(string buffer, vector<string>&arg){
 	}else if(buffer.find("RENDIRSE") == 0){
 		return 2;
 
-	}else if(buffer.find("SALIR") == 0){
+	}else if(buffer.find("COMANDANTE") == 0){
 		return 3;
+
+	}else if(buffer.find("SALIR") == 0){
+		return 4;
 
 	}else{
 		return 0;

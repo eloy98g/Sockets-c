@@ -9,7 +9,11 @@
 #include <unistd.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <string>
+#include <vector>
+#include "funcionservidor.c"
 
+using namespace std;
 
 #define MSG_SIZE 250
 #define MAX_CLIENTS 4
@@ -20,12 +24,17 @@
  */
 
 void manejador(int signum);
-void salirCliente(int socket, fd_set * readfds, int * numGenerales, int arrayGenerales[]);
+void salirCliente(int socket, fd_set * readfds, int * numGenerales);
+int getNumVotos();
+int existeComandante();
+void algBizantino(int opcion);
 
 struct votacion {
     int socket;
     int voto;
+    int comandante;
 };
+struct votacion generales[MAX_CLIENTS];;
 
 int main ( )
 {
@@ -39,19 +48,19 @@ int main ( )
 	socklen_t from_len;
     fd_set readfds, auxfds;
     int salida;
-    int arrayGenerales[MAX_CLIENTS];
     int numGenerales = 0;
     //contadores
     int i,j,k;
 	int recibidos;
     char identificador[MSG_SIZE];
-    
+    int opcion = 1;
     int on, ret;
-
-    votacion votaciones[MAX_CLIENTS];
+    int comandante = 0;//socket del comandante
 
     for(int i = 0; i < MAX_CLIENTS;i++){
-        votaciones[i].socket = 0;
+        generales[i].socket = 0;
+        generales[i].voto = 0;
+        generales[i].comandante = 0;
     }
 
 
@@ -138,28 +147,29 @@ int main ( )
                             else
                             {
                                 if(numGenerales < MAX_CLIENTS){
-                                    votaciones[numGenerales].socket = new_sd;
-
                                     int i_aux;
 									bool cont = true;
 									for(i_aux = 0; i_aux < MAX_CLIENTS && cont; i_aux++){
-										if(votaciones[i_aux] == 0){
+										if(generales[i_aux].socket == 0){
 											cont = false;
-											votaciones[i_aux].socket = new_sd;
-										}
+											generales[i_aux].socket = new_sd;
+                                        }
 									}
 
                                     numGenerales++;
                                     FD_SET(new_sd,&readfds);
                                 
-                                    strcpy(buffer, "[General conectado]\n");
-                                
+                                    printf("Nuevo General conectado | sd: %d\n", new_sd);
+
+                                    strcpy(buffer, "[General conectado]");
                                     send(new_sd,buffer,strlen(buffer),0);
                                 
                                     for(j=0; j<(numGenerales-1);j++){
-                                        bzero(buffer,sizeof(buffer));
-                                        sprintf(buffer, "Nuevo General conectado: %d\n",new_sd);
-                                        send(arrayGenerales[j],buffer,strlen(buffer),0);
+                                        if(generales[j].socket != new_sd){
+                                            bzero(buffer,sizeof(buffer));
+                                            sprintf(buffer, "Nuevo General conectado: %d\n",new_sd);
+                                            send(generales[j].socket,buffer,sizeof(buffer),0);
+                                        }
                                     }
                                 }
                                 else
@@ -182,16 +192,32 @@ int main ( )
                             if(strcmp(buffer,"SALIR\n") == 0){
 
                                 for (j = 0; j < numGenerales; j++){
-                                    send(arrayGenerales[j], "-Err. Servidor desconectado\n", strlen("-Err. Servidor desconectado\n"),0);
-                                    close(arrayGenerales[j]);
-                                    FD_CLR(arrayGenerales[j],&readfds);
+                                    bzero(buffer,sizeof(buffer));
+                                    sprintf(buffer, "[Error] Servidor desconectado]\n");
+                                    send(generales[j].socket,buffer,sizeof(buffer),0);
+                                    close(generales[j].socket);
+                                    FD_CLR(generales[j].socket,&readfds);
                                 }
                                     close(sd);
                                     exit(-1);
 
 
                             }
-                            //Mensajes que se quieran mandar a los Generales (implementar)
+                            if(strcmp(buffer,"OPCIONES\n") == 0){
+
+                                printf("OPCIONES DEL ALGORITMO:\n");
+                                printf("1. Todos se comunican con todos (por defecto)\n");
+                                printf("2. No todos se comunican con todos\n");
+                                printf("Introduzca la opcion: ");
+                            }
+                            if(strcmp(buffer,"1\n") == 0){
+                                printf("HA ELEGIDO LA OPCION 1: TODOS CON TODOS\n");
+                                opcion = 1;
+                            }
+                            if(strcmp(buffer,"2\n") == 0){
+                                opcion = 2;
+                                printf("HA ELEGIDO LA OPCION 2: NO TODOS CON TODOS\n");
+                            }
 
                         }
                         else{
@@ -206,38 +232,92 @@ int main ( )
 								arg.resize(2);
 								int n = parseo(strbuffer, arg);
 								int index;
-								for(index = 0; index < MAX_CLIENTS && votaciones[index].socket != i; index++);
+								for(index = 0; index < MAX_CLIENTS && generales[index].socket != i; index++);
 
 								switch(n){
 									//ATACAR
 									case 1:
-                                        votaciones[sd].voto = n;
-										if(numGenerales == 4){
-                                            //AlgBizantino(votaciones);
-                                        }else{
-                                            for(j=0; j<(numGenerales-1);j++){
+                                        if(existeComandante() == 1 && numGenerales == 4){
+                                            generales[index].voto = 1;
+                                            printf("Voto: Atacar | socket: %d | Num Votos: %d\n", generales[index].socket, getNumVotos());
+                                            if(getNumVotos() == 4){
+                                                printf("Todos los votos han sido realizados\n");
+                                                printf("Lanzando el algoritmo bizantino...\n");
+                                                algBizantino(opcion);
+                                            }else{
                                                 bzero(buffer,sizeof(buffer));
                                                 sprintf(buffer, "Faltan generales por votar\n");
-                                                send(arrayGenerales[j],buffer,strlen(buffer),0);
+                                                send(generales[index].socket,buffer,sizeof(buffer),0);
                                             }
+                                        }else if(existeComandante() == 1 && numGenerales < 4){
+                                            bzero(buffer,sizeof(buffer));
+                                            if(4-numGenerales == 1){
+                                                sprintf(buffer, "Falta %d General por conectarse\n", 4-numGenerales);
+                                            }else{
+                                                sprintf(buffer, "Faltan %d Generales por conectarse\n", 4-numGenerales);
+                                            }
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
+                                        }
+                                        else{
+                                            bzero(buffer,sizeof(buffer));
+                                            sprintf(buffer, "Se debe establecer Comandante\n");
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
                                         }
 										break;
 									//RENDIRSE
 									case 2:
-							            votaciones[sd].voto = n;
-										if(numGenerales == 4){
-                                            //AlgBizantino(votaciones);
-                                        }else{
-                                            for(j=0; j<(numGenerales-1);j++){
+                                        if(existeComandante() == 1 && numGenerales == 4){
+                                            generales[index].voto = 2;
+                                            printf("Voto: Rendir | socket: %d | Num Votos: %d\n", generales[index].socket, getNumVotos());
+                                            if(getNumVotos() == 4){
+                                                printf("Todos los votos han sido realizados\n");
+                                                printf("Lanzando el algoritmo bizantino...\n");
+                                                algBizantino(opcion);
+                                            }else{
                                                 bzero(buffer,sizeof(buffer));
                                                 sprintf(buffer, "Faltan generales por votar\n");
-                                                send(arrayGenerales[j],buffer,strlen(buffer),0);
+                                                send(generales[index].socket,buffer,sizeof(buffer),0);
                                             }
+                                        }else if(existeComandante() == 1 && numGenerales < 4){
+                                            bzero(buffer,sizeof(buffer));
+                                            if(4-numGenerales == 1){
+                                                sprintf(buffer, "Falta %d General por conectarse\n", 4-numGenerales);
+                                            }else{
+                                                sprintf(buffer, "Faltan %d Generales por conectarse\n", 4-numGenerales);
+                                            }
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
                                         }
+                                        else{
+                                            bzero(buffer,sizeof(buffer));
+                                            sprintf(buffer, "Se debe establecer Comandante\n");
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
+                                        }
+							            
 										break;
+                                    //COMANDANTE
+                                    case 3:
+                                        if(existeComandante() == 0){
+                                            generales[index].comandante = 1;
+                                            comandante = generales[index].socket;
+                                            printf("Comandante asignado al General %d\n", comandante);
+                                            bzero(buffer,sizeof(buffer));
+                                            sprintf(buffer, "General %d establecido como Comandante\n", generales[index].socket);
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
+                                        }else{
+                                            bzero(buffer,sizeof(buffer));
+                                            sprintf(buffer, "Ya existe Comandante\n");
+                                            send(generales[index].socket,buffer,sizeof(buffer),0);
+                                        }
+                                        break;
 									//SALIR
-									case 3:
-										salirCliente(i,&readfds,&numGenerales,arrayGenerales,usuariosConectados);
+									case 4:
+                                        generales[index].voto = 0;
+                                        if(generales[index].socket == comandante){
+                                            generales[index].comandante = 0;
+                                        }
+                                        numGenerales--;
+                                        printf("El socket %d, se ha desconectado\n", generales[index].socket);
+										salirCliente(i,&readfds,&numGenerales);
 										break;
 								}
 								////////////////////////////////
@@ -247,7 +327,7 @@ int main ( )
                             {
                                 printf("El socket %d, ha introducido ctrl+c\n", i);
                                 //Eliminar ese socket
-                                salirCliente(i,&readfds,&numGenerales,arrayGenerales);
+                                salirCliente(i,&readfds,&numGenerales);
                             }
                         }
                     }
@@ -260,20 +340,21 @@ int main ( )
 	
 }
 
-void salirCliente(int socket, fd_set * readfds, int * numGenerales, int arrayGenerales[]){
+void salirCliente(int socket, fd_set * readfds, int * numGenerales){
   
     char buffer[250];
     int j;
     
     close(socket);
     FD_CLR(socket,readfds);
+
     
     //Re-estructurar el array de Generales
     for (j = 0; j < (*numGenerales) - 1; j++)
-        if (arrayGenerales[j] == socket)
+        if (generales[j].socket == socket)
             break;
     for (; j < (*numGenerales) - 1; j++)
-        (arrayGenerales[j] = arrayGenerales[j+1]);
+        (generales[j].socket = generales[j+1].socket);
     
     (*numGenerales)--;
     
@@ -281,8 +362,8 @@ void salirCliente(int socket, fd_set * readfds, int * numGenerales, int arrayGen
     sprintf(buffer,"Desconexión del cliente: %d\n",socket);
     
     for(j=0; j<(*numGenerales); j++)
-        if(arrayGenerales[j] != socket)
-            send(arrayGenerales[j],buffer,strlen(buffer),0);
+        if(generales[j].socket != socket)
+            send(generales[j].socket,buffer,strlen(buffer),0);
 
 
 }
@@ -291,10 +372,41 @@ void salirCliente(int socket, fd_set * readfds, int * numGenerales, int arrayGen
 void manejador (int signum){
     printf("\nSe ha recibido la señal sigint\n");
     signal(SIGINT,manejador);
-    
-    //Implementar lo que se desee realizar cuando ocurra la excepción de ctrl+c en el servidor
 }
 
-int AlgBizantino(struct votacion votos){
-    
+int getNumVotos(){
+    int count=0;
+    for(int i = 0; i < MAX_CLIENTS; i++){
+        if(generales[i].voto != 0){
+            count++;
+        }
+    }
+    return count;
 }
+
+int existeComandante(){
+    for(int i = 0; i < MAX_CLIENTS; i++){
+        if(generales[i].comandante == 1){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void algBizantino(int opcion){
+
+    switch(opcion){
+        case 1:
+            for(int i = 0; i< MAX_CLIENTS;i++){
+                
+            }
+            printf("-");
+            break;
+        case 2:
+
+            break;
+        default:
+            break;
+    }
+}
+
