@@ -277,9 +277,15 @@ int main ( )
                                                     printf("Lanzando el algoritmo bizantino...\n");
 
                                                     int res = algBizantino();
+                                                    if(res == 0){
+                                                        bzero(buffer,sizeof(buffer));
+                                                        printf("El resultado ha sido ATACAR\n");
+                                                    }else{
+                                                        bzero(buffer,sizeof(buffer));
+                                                        printf("El resultado ha sido RENDIRSE\n");
+                                                    }
                                                     for(int aux = 0; aux < MAX_CLIENTS; aux++){
                                                         if(res == 0){
-                                                            printf("El resultado ha sido ATACAR\n");
                                                             bzero(buffer,sizeof(buffer));
                                                             sprintf(buffer, "La orden mayoritaria es ATACAR\n");
                                                             send(generales[aux].socket,buffer,sizeof(buffer),0);
@@ -287,6 +293,7 @@ int main ( )
                                                             for(int i = 0; i < MAX_CLIENTS; i++){
                                                                 for(int j = 0; j<MAX_CLIENTS-1; j++){
                                                                     if(generales[i].voto[j] == 2){
+                                                                        j = MAX_CLIENTS;
                                                                         bzero(buffer,sizeof(buffer));
                                                                         sprintf(buffer, "El traidor podria ser el general %d\n",i);
                                                                         send(generales[aux].socket,buffer,sizeof(buffer),0);
@@ -294,13 +301,13 @@ int main ( )
                                                                 }
                                                             }
                                                         }else{
-                                                            printf("El resultado ha sido RENDIRSE\n");
                                                             bzero(buffer,sizeof(buffer));
                                                             sprintf(buffer, "La orden mayoritaria es RENDIRSE\n");
                                                             send(generales[aux].socket,buffer,sizeof(buffer),0);
                                                             for(int i = 0; i < MAX_CLIENTS; i++){
                                                                 for(int j = 0; j<MAX_CLIENTS-1; j++){
                                                                     if(generales[i].voto[j] == 1){
+                                                                        j = MAX_CLIENTS;
                                                                         bzero(buffer,sizeof(buffer));
                                                                         sprintf(buffer, "El traidor podria ser el general %d\n",i);
                                                                         send(generales[aux].socket,buffer,sizeof(buffer),0);
@@ -310,7 +317,8 @@ int main ( )
                                                         }
                                                     }
                                                     //Reseteo de variables
-                                                    printf("Se procede al reseteo de variables...");
+                                                    bzero(buffer,sizeof(buffer));
+                                                    printf("Se procede al reseteo de variables...\n");
                                                     for(int aux = 0; aux < MAX_CLIENTS; aux++){
                                                         if(generales[index].socket != generales[aux].socket){
                                                             bzero(buffer,sizeof(buffer));
@@ -383,7 +391,7 @@ int main ( )
                                                     
                                                     //Envio de las ordenes a los generales
                                                     for(int aux = 0; aux < MAX_CLIENTS; aux++){
-                                                        if(generales[index].comandante == 0){
+                                                        if(generales[aux].comandante == 0){
                                                             if(generales[index].voto[aux] == 1){
                                                                 bzero(buffer,sizeof(buffer));
                                                                 sprintf(buffer, "La orden del Comandante es ATACAR\n");
