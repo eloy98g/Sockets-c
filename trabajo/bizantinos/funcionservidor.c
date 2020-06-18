@@ -5,24 +5,36 @@ using namespace std;
 
 int parseo(string buffer, vector<string>&arg){
 	if(buffer.find("VOTAR") == 0){
-		/*size_t espacio = buffer.find(" ");
+		size_t espacio = buffer.find(" ");
 		size_t coma = buffer.find(",");
 		size_t endl = buffer.find("\n");
 
 		if(espacio == std::string::npos || coma == std::string::npos) return 0;
 
 		arg[0] = buffer.substr(espacio+1, coma - espacio - 1);
-		arg[1] = buffer.substr(coma+1, endl - coma - 1);*/
+		arg[1] = buffer.substr(coma+1, endl - coma - 1);
 		return 1;
 
 	}else if(buffer.find("ORDEN") == 0){
+		size_t espacio = buffer.find(" ");
+		size_t coma = buffer.find(",");
+		size_t endl = buffer.find("\n");
+
+		if(espacio == std::string::npos || coma == std::string::npos) return 0;
+
+		arg[0] = buffer.substr(espacio+1, coma - espacio - 1);
+		arg[1] = buffer.substr(coma+1, coma - espacio - 1);
+		arg[2] = buffer.substr(coma+1, endl - coma - 1);
 		return 2;
 
 	}else if(buffer.find("COMANDANTE") == 0){
 		return 3;
 
-	}else if(buffer.find("SALIR") == 0){
+	}else if(buffer.find("HELP") == 0){
 		return 4;
+
+	}else if(buffer.find("SALIR") == 0){
+		return 5;
 
 	}else{
 		return 0;
